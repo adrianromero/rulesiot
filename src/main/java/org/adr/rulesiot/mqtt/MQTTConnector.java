@@ -18,6 +18,7 @@
 //
 package org.adr.rulesiot.mqtt;
 
+import java.util.Arrays;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import org.adr.rulesiot.engine.IOQueue;
@@ -34,59 +35,24 @@ import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
  *
  * @author adrian
  */
-public class MQTTConnector implements MqttCallback, IOQueue<Action, Result> {
+public class MQTTConnector {
 
     // MQTT
+    private final MQTTConnectorConfig config;
+    private final TopicInfo[] subscriptions;
+
     private MqttClient mqttClient = null;
     private BlockingQueue<Action> messagesqueue;
 
-    @Override
-    public void connectionLost(Throwable arg0) {
-        // throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    public MQTTConnector(MQTTConnectorConfig config, TopicInfo[] subscriptions) {
+        this.config = config;
+        this.subscriptions = subscriptions;
     }
 
-    @Override
-    public void messageArrived(String topic, MqttMessage mqttmessage) throws Exception {
-        Message message = new Message();
-        message.topic = topic;
-        message.payload = mqttmessage.getPayload();
-        message.qos = mqttmessage.getQos();
-        message.retained = mqttmessage.isRetained();
-        Action action = new Action();
-        action.message = message;
-        messagesqueue.add(action);
-    }
+    public void connect() throws MqttException {
 
-    @Override
-    public void deliveryComplete(IMqttDeliveryToken arg0) {
-        // throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public Action take() throws InterruptedException {
-        return messagesqueue.take();
-    }
-
-    @Override
-    public void put(Result result) throws InterruptedException {
-        try {
-            for (int i = 0; i < result.messages.length; i++) {
-                Message msg = result.messages[i];
-                MqttMessage mm = new MqttMessage(msg.payload);
-                mm.setQos(msg.qos);
-                mm.setRetained(msg.retained);
-                mqttClient.publish(msg.topic, mm);
-            }
-
-        } catch (MqttException ex) {
-            // TODO: Review in case of paho exception too much publications              
-        }
-    }
-
-    public void connect(MQTTConnectorConfig config) throws MqttException {
-
-        String[] listtopics = new String[]{"myhelloiot/#"};
-        int[] listqos = new int[]{0};
+        String[] listtopics = Arrays.stream(subscriptions).map(ti -> ti.topic).toArray(String[]::new);
+        int[] listqos = Arrays.stream(subscriptions).mapToInt(ti -> ti.qos).toArray();
 
         messagesqueue = new LinkedBlockingQueue<Action>();
         mqttClient = new MqttClient(config.url, config.clientid, new MemoryPersistence());
@@ -105,7 +71,7 @@ public class MQTTConnector implements MqttCallback, IOQueue<Action, Result> {
             options.setWill(config.lastwill.topic, config.lastwill.payload, config.lastwill.qos, config.lastwill.retained);
         }
         mqttClient.connect(options);
-        mqttClient.setCallback(this);
+        mqttClient.setCallback(new MQTTConnectorMqttCallback());
         if (listtopics.length > 0) {
             mqttClient.subscribe(listtopics, listqos);
         }
@@ -115,12 +81,65 @@ public class MQTTConnector implements MqttCallback, IOQueue<Action, Result> {
         // To be invoked by executor thread
         if (mqttClient.isConnected()) {
             mqttClient.setCallback(null);
-            String[] listtopics = new String[]{"myhelloiot/#"};
+            String[] listtopics = Arrays.stream(subscriptions).map(ti -> ti.topic).toArray(String[]::new);
             mqttClient.unsubscribe(listtopics);
             mqttClient.disconnect();
             mqttClient.close();
         }
         mqttClient = null;
         messagesqueue = null;
+    }
+
+    public IOQueue<Action, Result> createIOQueue() {
+        return new MQTTConnectorIOQueue();
+    }
+
+    private class MQTTConnectorMqttCallback implements MqttCallback {
+
+        @Override
+        public void connectionLost(Throwable arg0) {
+            // throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+
+        @Override
+        public void messageArrived(String topic, MqttMessage mqttmessage) throws Exception {
+            Message message = new Message();
+            message.topic = topic;
+            message.payload = mqttmessage.getPayload();
+            message.qos = mqttmessage.getQos();
+            message.retained = mqttmessage.isRetained();
+            Action action = new Action();
+            action.message = message;
+            messagesqueue.add(action);
+        }
+
+        @Override
+        public void deliveryComplete(IMqttDeliveryToken arg0) {
+            // throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        }
+    }
+
+    private class MQTTConnectorIOQueue implements IOQueue<Action, Result> {
+
+        @Override
+        public Action take() throws InterruptedException {
+            return messagesqueue.take();
+        }
+
+        @Override
+        public void put(Result result) throws InterruptedException {
+            try {
+                for (int i = 0; i < result.messages.length; i++) {
+                    Message msg = result.messages[i];
+                    MqttMessage mm = new MqttMessage(msg.payload);
+                    mm.setQos(msg.qos);
+                    mm.setRetained(msg.retained);
+                    mqttClient.publish(msg.topic, mm);
+                }
+
+            } catch (MqttException ex) {
+                // TODO: Review in case of paho exception too much publications              
+            }
+        }
     }
 }

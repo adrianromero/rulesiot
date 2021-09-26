@@ -23,6 +23,7 @@ import java.util.logging.Logger;
 import org.adr.rulesiot.engine.AppRuntime;
 import org.adr.rulesiot.mqtt.MQTTConnector;
 import org.adr.rulesiot.mqtt.MQTTConnectorConfig;
+import org.adr.rulesiot.mqtt.TopicInfo;
 import org.eclipse.paho.client.mqttv3.MqttException;
 
 /**
@@ -43,14 +44,14 @@ public class Main {
             config.url = "tcp://localhost:1883";
             config.clientid = "rulesiot_2341237";
 
-            MQTTConnector c = new MQTTConnector();
-            c.connect(config);
+            MQTTConnector c = new MQTTConnector(config, new TopicInfo[]{new TopicInfo("myhelloiot/#", 0)});
+            c.connect();
 
             MyAppEngine engine = new MyAppEngine();
             MyAppState initial = new MyAppState(); // Empty
 
             AppRuntime runtime = new AppRuntime();
-            runtime.loop(engine, c, initial);
+            runtime.loop(engine, c.createIOQueue(), initial);
 
             c.disconnect();
 
