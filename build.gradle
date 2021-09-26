@@ -1,0 +1,15 @@
+apply plugin: 'java'
+apply plugin: 'jacoco'
+apply plugin: 'application'
+
+
+mainClassName = 'org.adr.rulesiot.Main'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation         'org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.0'
+    testImplementation     'junit:junit:4.13'
+}
