@@ -18,17 +18,16 @@
 //
 package org.adr.rulesiot;
 
-import java.util.function.BiFunction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.adr.rulesiot.engine.AppRuntime;
-import org.adr.rulesiot.mqtt.Action;
 import org.adr.rulesiot.mqtt.MQTTConnector;
 import org.adr.rulesiot.mqtt.MQTTConnectorConfig;
 import org.adr.rulesiot.mqtt.TopicInfo;
+import org.adr.rulesiot.mqtt.engine.EngineReducer;
 import org.adr.rulesiot.mqtt.engine.EngineRules;
 import org.adr.rulesiot.mqtt.engine.EngineState;
-import org.adr.rulesiot.mqtt.engine.ReducerAction;
+import org.adr.rulesiot.mqtt.engine.EngineReducerAction;
 import org.eclipse.paho.client.mqttv3.MqttException;
 
 /**
@@ -44,25 +43,26 @@ public class Main {
      */
     public static void main(String[] args) {
 
+        EngineState<MyAppStateInfo> initial = new EngineState<>();
+        initial.info = new MyAppStateInfo();
+
+        EngineReducer<MyAppStateInfo> reducer1
+                = new EngineReducerAction<>("myrulesiot/exit", (info, action) -> {
+                    EngineState<MyAppStateInfo> newstate = new EngineState<>();
+                    newstate.info = info;
+                    newstate.exit = "1".equals(new String(action.message.payload));
+                    return newstate;
+                });
+
+        EngineRules<MyAppStateInfo> engine = new EngineRules<>(reducer1);
+
+        MQTTConnectorConfig config = new MQTTConnectorConfig();
+        config.url = "tcp://localhost:1883";
+        config.clientid = "rulesiot_2341237";
+
         try {
-            MQTTConnectorConfig config = new MQTTConnectorConfig();
-            config.url = "tcp://localhost:1883";
-            config.clientid = "rulesiot_2341237";
-
-            MQTTConnector c = new MQTTConnector(config, new TopicInfo[]{new TopicInfo("myhelloiot/#", 0)});
+            MQTTConnector c = new MQTTConnector(config, new TopicInfo[]{new TopicInfo("myrulesiot/#", 0)});
             c.connect();
-
-            EngineState<MyAppStateInfo> initial = new EngineState<>(); // Empty
-
-            BiFunction<MyAppStateInfo, Action, EngineState<MyAppStateInfo>> reducer1
-                    = new ReducerAction<>("myhelloiot/exit", (info, action) -> {
-                        EngineState<MyAppStateInfo> newstate = new EngineState<>();
-                        newstate.info = info; // clone o lo que sea
-                        newstate.exit = "1".equals(new String(action.message.payload));
-                        return newstate;
-                    });
-
-            EngineRules<MyAppStateInfo> engine = new EngineRules<>(reducer1);
 
             AppRuntime runtime = new AppRuntime();
             runtime.loop(engine, c.createIOQueue(), initial);

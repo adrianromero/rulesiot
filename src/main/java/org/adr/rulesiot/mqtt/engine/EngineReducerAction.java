@@ -5,7 +5,6 @@
  */
 package org.adr.rulesiot.mqtt.engine;
 
-import java.util.function.BiFunction;
 import org.adr.rulesiot.mqtt.Action;
 import org.eclipse.paho.client.mqttv3.MqttTopic;
 
@@ -13,12 +12,12 @@ import org.eclipse.paho.client.mqttv3.MqttTopic;
  *
  * @author adrian
  */
-public class ReducerAction<StateInfo> implements BiFunction<StateInfo, Action, EngineState<StateInfo>> {
+public class EngineReducerAction<StateInfo> implements EngineReducer<StateInfo> {
 
     private String topicfilter;
-    private BiFunction<StateInfo, Action, EngineState<StateInfo>> f;
+    private EngineReducer<StateInfo> f;
 
-    public ReducerAction(String topicfilter, BiFunction<StateInfo, Action, EngineState<StateInfo>> f) {
+    public EngineReducerAction(String topicfilter, EngineReducer<StateInfo> f) {
         this.topicfilter = topicfilter;
         this.f = f;
     }
@@ -28,7 +27,7 @@ public class ReducerAction<StateInfo> implements BiFunction<StateInfo, Action, E
         if (MqttTopic.isMatched(topicfilter, action.message.topic)) {
             return f.apply(info, action);
         } else {
-            EngineState state = new EngineState();
+            EngineState<StateInfo> state = new EngineState<>();
             state.info = info;
             return state;
         }

@@ -20,7 +20,6 @@ package org.adr.rulesiot.mqtt.engine;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.BiFunction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.adr.rulesiot.engine.AppEngine;
@@ -36,11 +35,14 @@ public final class EngineRules<StateInfo> implements AppEngine<Action, Result, E
 
     private final static Logger LOGGER = Logger.getLogger(EngineRules.class.getName());
 
-    private final List<BiFunction<StateInfo, Action, EngineState<StateInfo>>> reducers;
+    private final List<EngineReducer<StateInfo>> reducers;
 
-    public EngineRules(BiFunction<StateInfo, Action, EngineState<StateInfo>>... reducers) {
+    public EngineRules(EngineReducer<StateInfo>[] reducers) {
         this.reducers = Arrays.asList(reducers);
+    }
 
+    public EngineRules(EngineReducer<StateInfo> reducer) {
+        this.reducers = Arrays.asList(reducer);
     }
 
     public EngineState<StateInfo> reduce(EngineState<StateInfo> state, Action action) {
@@ -62,7 +64,7 @@ public final class EngineRules<StateInfo> implements AppEngine<Action, Result, E
         return newstate;
     }
 
-    public Result template(EngineState state) {
+    public Result template(EngineState<StateInfo> state) {
 
         Result result = new Result();
         List<Message> l = state.messages;
