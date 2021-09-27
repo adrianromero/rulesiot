@@ -18,6 +18,8 @@
 //
 package org.adr.rulesiot.mqtt;
 
+import java.util.Arrays;
+
 /**
  *
  * @author adrian
@@ -31,6 +33,6 @@ public class Message {
 
     @Override
     public String toString() {
-        return "Message{" + "topic=" + topic + ", payload=" + payload + ", qos=" + qos + ", retained=" + retained + '}';
+        return "Message{" + "topic=" + topic + ", payload=" + Arrays.toString(payload) + ", qos=" + qos + ", retained=" + retained + '}';
     }
 }

@@ -18,41 +18,9 @@
 //
 package org.adr.rulesiot;
 
-import org.adr.rulesiot.mqtt.Action;
-import org.adr.rulesiot.mqtt.MQTTEngine;
-import org.adr.rulesiot.mqtt.Result;
-import org.adr.rulesiot.mqtt.Message;
-
 /**
  *
  * @author adrian
  */
-public class MyAppEngine implements MQTTEngine<MyAppState> {
-
-    public MyAppState reduce(MyAppState state, Action action) {
-
-        System.out.println(action.message.topic);
-
-        MyAppState newstate = new MyAppState();
-        if (action.message.topic.equals("myhelloiot/final")) {
-            newstate.value = 1;
-        }
-
-        return newstate;
-    }
-
-    public Result template(MyAppState state) {
-
-        Result result = new Result();
-        result.messages = new Message[]{};
-        if (state.value == 1) {
-            result.exit = true;
-        }
-
-        return result;
-    }
-
-    public boolean isFinal(Result result) {
-        return result.exit;
-    }
+public class MyAppStateInfo {
 }

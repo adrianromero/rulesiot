@@ -16,13 +16,20 @@
 //    You should have received a copy of the GNU General Public License
 //    along with HelloIot.  If not, see <http://www.gnu.org/licenses/>.
 //
-package org.adr.rulesiot;
+package org.adr.rulesiot.mqtt.engine;
+
+import java.util.LinkedList;
+import java.util.List;
+import org.adr.rulesiot.mqtt.Message;
 
 /**
  *
  * @author adrian
  */
-public class MyAppState {
+public class EngineState<StateInfo> {
 
-    public int value;
+    public StateInfo info = null;
+
+    public List<Message> messages = new LinkedList<>();
+    public boolean exit = false;
 }

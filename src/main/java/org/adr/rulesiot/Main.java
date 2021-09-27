@@ -18,12 +18,17 @@
 //
 package org.adr.rulesiot;
 
+import java.util.function.BiFunction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.adr.rulesiot.engine.AppRuntime;
+import org.adr.rulesiot.mqtt.Action;
 import org.adr.rulesiot.mqtt.MQTTConnector;
 import org.adr.rulesiot.mqtt.MQTTConnectorConfig;
 import org.adr.rulesiot.mqtt.TopicInfo;
+import org.adr.rulesiot.mqtt.engine.EngineRules;
+import org.adr.rulesiot.mqtt.engine.EngineState;
+import org.adr.rulesiot.mqtt.engine.ReducerAction;
 import org.eclipse.paho.client.mqttv3.MqttException;
 
 /**
@@ -47,8 +52,17 @@ public class Main {
             MQTTConnector c = new MQTTConnector(config, new TopicInfo[]{new TopicInfo("myhelloiot/#", 0)});
             c.connect();
 
-            MyAppEngine engine = new MyAppEngine();
-            MyAppState initial = new MyAppState(); // Empty
+            EngineState<MyAppStateInfo> initial = new EngineState<>(); // Empty
+
+            BiFunction<MyAppStateInfo, Action, EngineState<MyAppStateInfo>> reducer1
+                    = new ReducerAction<>("myhelloiot/exit", (info, action) -> {
+                        EngineState<MyAppStateInfo> newstate = new EngineState<>();
+                        newstate.info = info; // clone o lo que sea
+                        newstate.exit = "1".equals(new String(action.message.payload));
+                        return newstate;
+                    });
+
+            EngineRules<MyAppStateInfo> engine = new EngineRules<>(reducer1);
 
             AppRuntime runtime = new AppRuntime();
             runtime.loop(engine, c.createIOQueue(), initial);

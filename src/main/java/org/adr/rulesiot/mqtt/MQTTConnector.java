@@ -21,6 +21,8 @@ package org.adr.rulesiot.mqtt;
 import java.util.Arrays;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.adr.rulesiot.engine.IOQueue;
 
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
@@ -36,6 +38,8 @@ import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
  * @author adrian
  */
 public class MQTTConnector {
+
+    private final static Logger LOGGER = Logger.getLogger(MQTTConnector.class.getName());
 
     // MQTT
     private final MQTTConnectorConfig config;
@@ -97,11 +101,6 @@ public class MQTTConnector {
     private class MQTTConnectorMqttCallback implements MqttCallback {
 
         @Override
-        public void connectionLost(Throwable arg0) {
-            // throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        }
-
-        @Override
         public void messageArrived(String topic, MqttMessage mqttmessage) throws Exception {
             Message message = new Message();
             message.topic = topic;
@@ -114,8 +113,13 @@ public class MQTTConnector {
         }
 
         @Override
+        public void connectionLost(Throwable ex) {
+            LOGGER.log(Level.INFO, "Connectionlost %s.", ex);
+        }
+
+        @Override
         public void deliveryComplete(IMqttDeliveryToken arg0) {
-            // throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            // Ignoring
         }
     }
 
@@ -136,9 +140,8 @@ public class MQTTConnector {
                     mm.setRetained(msg.retained);
                     mqttClient.publish(msg.topic, mm);
                 }
-
             } catch (MqttException ex) {
-                // TODO: Review in case of paho exception too much publications              
+                LOGGER.log(Level.WARNING, "Cannot publish message %s.", ex);
             }
         }
     }
