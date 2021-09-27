@@ -12,4 +12,9 @@ repositories {
 dependencies {
     implementation         'org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.0'
     testImplementation     'junit:junit:4.13'
+} 
+
+
+compileJava {
+    options.compilerArgs << "-Xlint:unchecked"
 }
