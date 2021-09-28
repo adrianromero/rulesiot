@@ -27,9 +27,23 @@ import java.util.Arrays;
 public class Message {
 
     public String topic;
-    public byte[] payload;
-    public int qos;
-    public boolean retained;
+
+    public byte[] payload = new byte[0];
+    public int qos = 0;
+    public boolean retained = false;
+
+    public Message() {
+    }
+
+    public Message(String topic, byte[] payload) {
+        this.topic = topic;
+        this.payload = payload;
+    }
+
+    public Message(String topic, String payload) {
+        this.topic = topic;
+        this.payload = payload.getBytes();
+    }
 
     @Override
     public String toString() {

@@ -23,6 +23,7 @@ import java.util.logging.Logger;
 import org.adr.rulesiot.engine.AppRuntime;
 import org.adr.rulesiot.mqtt.MQTTConnector;
 import org.adr.rulesiot.mqtt.MQTTConnectorConfig;
+import org.adr.rulesiot.mqtt.Message;
 import org.adr.rulesiot.mqtt.TopicInfo;
 import org.adr.rulesiot.mqtt.engine.EngineReducer;
 import org.adr.rulesiot.mqtt.engine.EngineRules;
@@ -47,21 +48,35 @@ public class Main {
         initial.info = new MyAppStateInfo();
 
         EngineReducer<MyAppStateInfo> reducer1
-                = new EngineReducerAction<>("myrulesiot/exit", (info, action) -> {
+                = new EngineReducerAction<>("myhelloiot/exit", (info, action) -> {
                     EngineState<MyAppStateInfo> newstate = new EngineState<>();
                     newstate.info = info;
                     newstate.exit = "1".equals(new String(action.message.payload));
                     return newstate;
                 });
 
-        EngineRules<MyAppStateInfo> engine = new EngineRules<>(reducer1);
+        EngineReducer<MyAppStateInfo> reducer2
+                = new EngineReducerAction<>("myhelloiot/alarm", (info, action) -> {
+                    EngineState<MyAppStateInfo> newstate = new EngineState<>();
+                    newstate.info = info;
+
+                    newstate.messages.add(new Message("myhelloiot/modal", "0"));
+
+                    if ("1234".equals(new String(action.message.payload))) {
+                        newstate.messages.add(new Message("myhelloiot/disconnect", "1234"));
+                    }
+
+                    return newstate;
+                });
+
+        EngineRules<MyAppStateInfo> engine = new EngineRules<>(reducer1, reducer2);
 
         MQTTConnectorConfig config = new MQTTConnectorConfig();
         config.url = "tcp://localhost:1883";
         config.clientid = "rulesiot_2341237";
 
         try {
-            MQTTConnector c = new MQTTConnector(config, new TopicInfo[]{new TopicInfo("myrulesiot/#", 0)});
+            MQTTConnector c = new MQTTConnector(config, new TopicInfo[]{new TopicInfo("myhelloiot/#", 0)});
             c.connect();
 
             AppRuntime runtime = new AppRuntime();

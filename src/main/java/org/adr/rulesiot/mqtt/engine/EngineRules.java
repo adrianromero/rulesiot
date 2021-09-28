@@ -37,7 +37,7 @@ public final class EngineRules<StateInfo> implements AppEngine<Action, Result, E
 
     private final List<EngineReducer<StateInfo>> reducers;
 
-    public EngineRules(EngineReducer<StateInfo>[] reducers) {
+    public EngineRules(EngineReducer<StateInfo>... reducers) {
         this.reducers = Arrays.asList(reducers);
     }
 
